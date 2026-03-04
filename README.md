@@ -32,6 +32,7 @@ jobs:
 | `comment` | no | `true` | Post scan results as PR comment |
 | `badge` | no | `true` | Generate badge URL in outputs |
 | `ml` | no | `false` | Enable ML-based prompt injection detection |
+| `sarif` | no | `true` | Generate SARIF report and upload to GitHub Code Scanning |
 | `version` | no | `latest` | mcp-shield-cli version to install |
 
 ## Outputs
@@ -42,6 +43,7 @@ jobs:
 | `grade` | Letter grade (A+ to F) |
 | `badge-url` | shields.io badge URL |
 | `report-json` | Path to JSON report file |
+| `report-sarif` | Path to SARIF report file |
 
 ## Badge
 
@@ -72,6 +74,21 @@ When `comment: true` (default) and triggered by a pull request, the Action posts
 > ### Findings
 > - :x: **SEC-003** FAIL — Security score: 30/100
 > - :warning: **SEC-002** WARN — 11 injection vectors
+
+## GitHub Code Scanning (SARIF)
+
+By default (`sarif: true`), the Action generates a [SARIF 2.1.0](https://sarifweb.azurewebsites.net/) report and uploads it to GitHub's Security tab via `codeql-action/upload-sarif`. Results appear under **Security → Code scanning alerts** with CWE references and severity scores.
+
+No extra configuration needed — it works out of the box.
+
+To disable SARIF upload:
+
+```yaml
+- uses: thuggeelya/mcp-shield-action@v1
+  with:
+    server: 'node dist/index.js'
+    sarif: false
+```
 
 ## Examples
 

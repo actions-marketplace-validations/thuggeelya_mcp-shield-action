@@ -26,6 +26,10 @@ inputs:
     description: 'Enable ML-based prompt injection detection (true/false)'
     required: false
     default: 'false'
+  sarif:
+    description: 'Generate SARIF report for GitHub Code Scanning (true/false)'
+    required: false
+    default: 'true'
   version:
     description: 'mcp-shield-cli version to install (e.g., "0.1.0" or "latest")'
     required: false
@@ -40,6 +44,8 @@ outputs:
     description: 'shields.io badge URL'
   report-json:
     description: 'Path to JSON report file'
+  report-sarif:
+    description: 'Path to SARIF report file (for upload-sarif)'
 
 runs:
   using: 'composite'
@@ -60,12 +66,17 @@ runs:
         INPUT_SERVER: ${{ inputs.server }}
         INPUT_FAIL_ON: ${{ inputs.fail-on }}
         INPUT_ML: ${{ inputs.ml }}
+        INPUT_SARIF: ${{ inputs.sarif }}
       run: |
         REPORT="/tmp/mcp-shield-report.json"
+        SARIF_REPORT="/tmp/mcp-shield-report.sarif"
 
         ARGS="--format json --output $REPORT --fail-on $INPUT_FAIL_ON"
         if [ "$INPUT_ML" = "true" ]; then
           ARGS="$ARGS --ml"
+        fi
+        if [ "$INPUT_SARIF" = "true" ]; then
+          ARGS="$ARGS --sarif-output $SARIF_REPORT"
         fi
 
         EXIT_CODE=0
@@ -99,6 +110,9 @@ runs:
         echo "grade=$GRADE" >> $GITHUB_OUTPUT
         echo "badge-url=$BADGE_URL" >> $GITHUB_OUTPUT
         echo "report-json=$REPORT" >> $GITHUB_OUTPUT
+        if [ "$INPUT_SARIF" = "true" ]; then
+          echo "report-sarif=$SARIF_REPORT" >> $GITHUB_OUTPUT
+        fi
 
         # Save for comment step
         echo "EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
@@ -148,6 +162,13 @@ runs:
         BODY=$(echo "$BODY" | sed 's/^        //')
 
         gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+    - name: Upload SARIF to GitHub Security
+      if: inputs.sarif == 'true' && always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: /tmp/mcp-shield-report.sarif
+      continue-on-error: true
 
     - name: Exit with scan result
       shell: bash
