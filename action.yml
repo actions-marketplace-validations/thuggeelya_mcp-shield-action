@@ -199,11 +199,14 @@ runs:
                 # Show details (specific tools/fields affected)
                 details = f.get("details", [])
                 if details:
-                    # Show up to 10 detail lines
-                    for d in details[:10]:
+                    VISIBLE = 3
+                    for d in details[:VISIBLE]:
                         lines.append(f"- `{d.strip()}`")
-                    if len(details) > 10:
-                        lines.append(f"- ... and {len(details) - 10} more")
+                    if len(details) > VISIBLE:
+                        lines.append(f"<details><summary>Show all {len(details)} items</summary>\n")
+                        for d in details[VISIBLE:]:
+                            lines.append(f"- `{d.strip()}`")
+                        lines.append("</details>")
                     lines.append("")
 
         # Recommendations
@@ -217,11 +220,20 @@ runs:
                 lines.append(f"> {rec['action']}")
                 tools = rec.get("tools", [])
                 if tools:
-                    tool_list = ", ".join(f"`{t}`" for t in tools[:8])
-                    if len(tools) > 8:
-                        tool_list += f", ... +{len(tools) - 8} more"
+                    TOOL_VISIBLE = 5
+                    tool_list = ", ".join(f"`{t}`" for t in tools[:TOOL_VISIBLE])
                     lines.append(f"> Affected: {tool_list}")
+                    if len(tools) > TOOL_VISIBLE:
+                        rest = ", ".join(f"`{t}`" for t in tools[TOOL_VISIBLE:])
+                        lines.append(f"> <details><summary>+{len(tools) - TOOL_VISIBLE} more</summary>{rest}</details>")
                 lines.append("")
+
+        # Full report collapsible
+        lines.append("<details><summary>Full JSON report</summary>\n")
+        lines.append("```json")
+        lines.append(json.dumps(report, indent=2, ensure_ascii=False))
+        lines.append("```")
+        lines.append("</details>\n")
 
         lines.append("---")
         lines.append(f"[![MCP Shield]({badge_url})](https://github.com/thuggeelya/mcp-shield)")
