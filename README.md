@@ -70,17 +70,31 @@ The Action outputs a `badge-url` you can use directly:
 
 ## PR comment
 
-When `comment: true` (default) and triggered by a pull request, the Action posts a summary:
+When `comment: true` (default) and triggered by a pull request, the Action posts a detailed report with specific findings, affected tools/fields, and actionable recommendations:
 
 > ## MCP Shield Report
+>
 > **Score: 57/100 (Grade: D)**
 > Checks: 22 | Passed: 13 | Failed: 1 | Warnings: 7
 >
 > ### Findings
-> - :x: **SEC-003** FAIL — Security score: 30/100 (14 finding(s))
-> - :warning: **SEC-002** WARN — Found 11 potential injection vector(s) (CWE-78, CWE-89, CWE-22)
-> - :warning: **SEC-004** WARN — Found 1 dangerous operation(s) (CWE-78, CWE-250)
-> - :warning: **SEC-006** WARN — Found 2 non-idempotent operation(s) (CWE-352)
+>
+> #### :x: [SEC-004](https://github.com/thuggeelya/mcp-shield/blob/main/docs/checks.md#sec-004) FAIL — Found 5 dangerous operation(s) (CWE-78, CWE-250)
+>
+> - `[high] Destructive operation: delete_pod`
+> - `[high] Destructive operation: delete_deployment`
+> - `[high] Exec operation: exec_command`
+>
+> #### :warning: [SEC-002](https://github.com/thuggeelya/mcp-shield/blob/main/docs/checks.md#sec-002) WARN — Found 3 potential injection vector(s) (CWE-78, CWE-89)
+>
+> - `[high] Potential injection vector: run_query.sql`
+> - `[medium] Unconstrained path field: read_file.path`
+>
+> ### Recommendations
+>
+> **:red_circle: Block dangerous operations (5 found)**
+> > Review and restrict destructive/exec tools, or use mcp-shield proxy with --deny
+> > Affected: `delete_pod`, `delete_deployment`, `exec_command`
 
 ## GitHub Code Scanning (SARIF)
 
