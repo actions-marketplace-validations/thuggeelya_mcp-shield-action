@@ -38,14 +38,19 @@ inputs:
 outputs:
   score:
     description: 'Numeric score (0-100)'
+    value: ${{ steps.scan.outputs.score }}
   grade:
     description: 'Letter grade (A+ to F)'
+    value: ${{ steps.scan.outputs.grade }}
   badge-url:
     description: 'shields.io badge URL'
+    value: ${{ steps.scan.outputs.badge-url }}
   report-json:
     description: 'Path to JSON report file'
+    value: ${{ steps.scan.outputs.report-json }}
   report-sarif:
     description: 'Path to SARIF report file (for upload-sarif)'
+    value: ${{ steps.scan.outputs.report-sarif }}
 
 runs:
   using: 'composite'
@@ -164,7 +169,7 @@ runs:
         gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
 
     - name: Upload SARIF to GitHub Security
-      if: inputs.sarif == 'true' && always()
+      if: inputs.sarif == 'true'
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: /tmp/mcp-shield-report.sarif
