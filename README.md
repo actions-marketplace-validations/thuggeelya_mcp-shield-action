@@ -72,8 +72,10 @@ When `comment: true` (default) and triggered by a pull request, the Action posts
 > Checks: 22 | Passed: 13 | Failed: 1 | Warnings: 7
 >
 > ### Findings
-> - :x: **SEC-003** FAIL — Security score: 30/100
-> - :warning: **SEC-002** WARN — 11 injection vectors
+> - :x: **SEC-003** FAIL — Security score: 30/100 (14 finding(s))
+> - :warning: **SEC-002** WARN — Found 11 potential injection vector(s) (CWE-78, CWE-89, CWE-22)
+> - :warning: **SEC-004** WARN — Found 1 dangerous operation(s) (CWE-78, CWE-250)
+> - :warning: **SEC-006** WARN — Found 2 non-idempotent operation(s) (CWE-352)
 
 ## GitHub Code Scanning (SARIF)
 
