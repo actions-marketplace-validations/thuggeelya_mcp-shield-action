@@ -137,37 +137,71 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        # Build findings list (FAILs and WARNs only)
-        FINDINGS=$(python3 -c "
-        import json
-        r = json.load(open('$REPORT'))
+        BODY=$(python3 << 'PYEOF'
+        import json, os
+
+        report = json.load(open(os.environ["REPORT"]))
+        score = os.environ["SCORE"]
+        grade = os.environ["GRADE"]
+        total = os.environ["TOTAL"]
+        passed = os.environ["PASSED"]
+        failed = os.environ["FAILED"]
+        warnings = os.environ["WARNINGS"]
+        badge_url = os.environ["BADGE_URL"]
+
         lines = []
-        for c in r['results']:
-            if c['outcome'] in ('fail', 'warn'):
-                icon = ':x:' if c['outcome'] == 'fail' else ':warning:'
-                cwe = c.get('metadata', {}).get('cwe_ids', [])
-                cwe_str = ', '.join(cwe)
-                suffix = ' (' + cwe_str + ')' if cwe else ''
-                lines.append(f\"- {icon} **{c['check_id']}** {c['outcome'].upper()} — {c['message']}{suffix}\")
-        print('\n'.join(lines[:10]))
-        if len(lines) > 10:
-            print(f'- ... and {len(lines) - 10} more')
-        ")
+        lines.append("## MCP Shield Report\n")
+        lines.append(f"**Score: {score}/100 (Grade: {grade})**")
+        lines.append(f"Checks: {total} | Passed: {passed} | Failed: {failed} | Warnings: {warnings}\n")
 
-        BODY="## MCP Shield Report
+        # Collect FAIL/WARN results with details
+        findings = [r for r in report["results"] if r["outcome"] in ("fail", "warn")]
 
-        **Score: ${SCORE}/100 (Grade: ${GRADE})**
-        Checks: ${TOTAL} | Passed: ${PASSED} | Failed: ${FAILED} | Warnings: ${WARNINGS}
+        if findings:
+            lines.append("### Findings\n")
+            for f in findings:
+                icon = "❌" if f["outcome"] == "fail" else "⚠️"
+                check_id = f["check_id"]
+                cwe = f.get("metadata", {}).get("cwe_ids", [])
+                cwe_str = f' ({", ".join(cwe)})' if cwe else ""
+                check_url = f"https://github.com/thuggeelya/mcp-shield/blob/main/docs/checks.md#{check_id.lower()}"
 
-        ### Findings
-        ${FINDINGS}
+                lines.append(f"#### {icon} [{check_id}]({check_url}) {f['outcome'].upper()} — {f['message']}{cwe_str}\n")
 
-        ---
-        [![MCP Shield](${BADGE_URL})](https://github.com/thuggeelya/mcp-shield)
-        <sub>Scanned with [mcp-shield-cli](https://pypi.org/project/mcp-shield-cli/)</sub>"
+                # Show details (specific tools/fields affected)
+                details = f.get("details", [])
+                if details:
+                    # Show up to 10 detail lines
+                    for d in details[:10]:
+                        lines.append(f"- `{d.strip()}`")
+                    if len(details) > 10:
+                        lines.append(f"- ... and {len(details) - 10} more")
+                    lines.append("")
 
-        # Remove leading spaces from heredoc-style indentation
-        BODY=$(echo "$BODY" | sed 's/^        //')
+        # Recommendations
+        recs = report.get("recommendations", {}).get("items", [])
+        if recs:
+            lines.append("### Recommendations\n")
+            for rec in recs:
+                prio = rec.get("priority", "")
+                prio_icon = {"high": "🔴", "medium": "🟡", "low": "🔵"}.get(prio, "")
+                lines.append(f"**{prio_icon} {rec['title']}**")
+                lines.append(f"> {rec['action']}")
+                tools = rec.get("tools", [])
+                if tools:
+                    tool_list = ", ".join(f"`{t}`" for t in tools[:8])
+                    if len(tools) > 8:
+                        tool_list += f", ... +{len(tools) - 8} more"
+                    lines.append(f"> Affected: {tool_list}")
+                lines.append("")
+
+        lines.append("---")
+        lines.append(f"[![MCP Shield]({badge_url})](https://github.com/thuggeelya/mcp-shield)")
+        lines.append(f'<sub>Scanned with [mcp-shield-cli](https://pypi.org/project/mcp-shield-cli/) · [Check reference](https://github.com/thuggeelya/mcp-shield/blob/main/docs/checks.md)</sub>')
+
+        print("\n".join(lines))
+        PYEOF
+        )
 
         gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
 
