@@ -146,7 +146,8 @@ runs:
             if c['outcome'] in ('fail', 'warn'):
                 icon = ':x:' if c['outcome'] == 'fail' else ':warning:'
                 cwe = c.get('metadata', {}).get('cwe_ids', [])
-                suffix = f' ({", ".join(cwe)})' if cwe else ''
+                cwe_str = ', '.join(cwe)
+                suffix = ' (' + cwe_str + ')' if cwe else ''
                 lines.append(f\"- {icon} **{c['check_id']}** {c['outcome'].upper()} — {c['message']}{suffix}\")
         print('\n'.join(lines[:10]))
         if len(lines) > 10:
